@@ -1,0 +1,9 @@
+# External projects
+AudioFile/
+BTrack/
+portaudio/
+
+# builds, runnables and outputs
+build/*
+record
+recorded.txt
