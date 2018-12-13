@@ -1,24 +1,53 @@
-TARGET=record
+RECORD_TARGET = record
+PLAY_TARGET = play
+
+BTRACK_SRCS_DIR=BTrack/src
+BTRACK_OBJS_DIR=BTrack/build
+BTRACK_SRCS=$(wildcard $(BTRACK_SRCS_DIR)/*.cpp)
+BTRACK_OBJS=$(patsubst $(BTRACK_SRCS_DIR)/%.cpp,$(BTRACK_OBJS_DIR)/%.o,$(BTRACK_SRCS))
+
+AUDIOF_SRCS_DIR=AudioFile/src
+AUDIOF_OBJS_DIR=AudioFile/build
+AUDIOF_SRCS=$(wildcard $(AUDIOF_SRCS_DIR)/*.cpp)
+AUDIOF_OBJS=$(patsubst $(AUDIOF_SRCS_DIR)/%.cpp,$(AUDIOF_OBJS_DIR)/%.o,$(AUDIOF_SRCS))
 
 SRCS_DIR=src
-BTRACK_SRCS_DIR=BTrack/src
 OBJS_DIR=build
+RECORD_SRCS=$(SRCS_DIR)/record.cpp
+RECORD_OBJS=$(patsubst $(SRCS_DIR)/%.cpp,$(OBJS_DIR)/%.o,$(RECORD_SRCS))
+PLAY_SRCS=$(SRCS_DIR)/play_file.cpp
+PLAY_OBJS=$(patsubst $(SRCS_DIR)/%.cpp,$(OBJS_DIR)/%.o,$(PLAY_SRCS))
 
-SRCS=$(wildcard $(SRCS_DIR)/*.cpp)
-OBJS=$(patsubst $(SRCS_DIR)/%.cpp,$(OBJS_DIR)/%.o,$(SRCS))
+PORTAUDIO_LIBS=-L./portaudio/lib/.libs -lportaudio
+PORTAUDIO_INC=-Iportaudio/include
+BTRACK_LIBS=-lsamplerate -lfftw3
+BTRACK_INC=-I$(BTRACK_SRCS_DIR)
+BTRACK_FLAGS=-DUSE_FFTW
+AUDIOF_INC=-I$(AUDIOF_SRCS_DIR)
 
-LDLIBS=-L./portaudio/lib/.libs -lsamplerate -lportaudio -lfftw3
-INC_FLAGS=-I./portaudio/include -I./$(BTRACK_SRCS_DIR)
-CPPFLAGS=$(INC_FLAGS) -DUSE_FFTW
+RECORDFLAGS=$(PORTAUDIO_INC) $(BTRACK_INC) $(BTRACK_FLAGS)
+PLAYFLAGS= -std=c++11 $(AUDIOF_INC) $(BTRACK_INC) $(BTRACK_FLAGS)
 
-all: $(TARGET)
+all: $(RECORD_TARGET) $(PLAY_TARGET)
 
-$(TARGET): $(OBJS)
+$(AUDIOF_OBJS):
+	+$(MAKE) -C AudioFile
+
+$(BTRACK_OBJS):
+	+$(MAKE) -C BTrack
+
+$(RECORD_TARGET): $(RECORD_OBJS) $(BTRACK_OBJS)
 	export DYLD_LIBRARY_PATH=/System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/:portaudio/lib/.libs
-	$(CXX) -o $@ $(OBJS) $(LDLIBS)
+	$(CXX) -o $@ $(RECORD_OBJS) $(BTRACK_OBJS) $(PORTAUDIO_LIBS) $(BTRACK_LIBS)
 
-$(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+$(RECORD_OBJS): $(RECORD_SRCS)
+	$(CXX) $(RECORDFLAGS) $(CXXFLAGS) -c $< -o $@
+
+$(PLAY_TARGET): $(PLAY_OBJS) $(AUDIOF_OBJS) $(BTRACK_OBJS)
+	$(CXX) -o $@ $(PLAY_OBJS) $(AUDIOF_OBJS) $(BTRACK_OBJS) $(BTRACK_LIBS)
+
+$(PLAY_OBJS): $(PLAY_SRCS)
+	$(CXX) $(PLAYFLAGS) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm $(OBJS_DIR)/*
+	$(RM) $(RECORD_OBJS) $(PLAY_OBJS) $(BTRACK_OBJS) $(AUDIOF_OBJS)

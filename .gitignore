@@ -7,3 +7,4 @@ portaudio/
 build/*
 record
 recorded.txt
+play
