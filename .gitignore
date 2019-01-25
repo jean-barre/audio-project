@@ -5,6 +5,6 @@ portaudio/
 
 # builds, runnables and outputs
 build/*
-record
+record-beat
 recorded.txt
 play
