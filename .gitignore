@@ -1,10 +1,12 @@
 # External projects
 AudioFile/
 BTrack/
+Chord-Detector-and-Chromagram/
 portaudio/
 
 # builds, runnables and outputs
 build/*
 record-beat
 recorded.txt
+record-chroma
 play
